@@ -2,7 +2,7 @@ import tempfile
 import random
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFacePipeline
@@ -116,4 +116,5 @@ def generate_summary(chunks, max_new_tokens=300):
     # Merge all partial summaries into one final summary
     final_summary = " ".join(summaries)
     return final_summary.strip()
+
 
