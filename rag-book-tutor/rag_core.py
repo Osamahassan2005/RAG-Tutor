@@ -8,7 +8,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFacePipeline
 from transformers import pipeline
 from langchain_core.prompts import PromptTemplate
-from langchain_community.chains.retrieval_qa import RetrievalQA
+from langchain.chains import ConversationalRetrievalChain
 
 @st.cache_data(show_spinner=False)
 def process_pdf(uploaded_file):
@@ -46,7 +46,6 @@ def create_embeddings(_chunks):
     retriever = vector_db.as_retriever(search_kwargs={"k":3})
     return retriever
 
-
 def create_qa_chain(retriever):
     # 🧠 Custom prompt
     prompt = PromptTemplate(
@@ -59,28 +58,28 @@ def create_qa_chain(retriever):
             "Detailed Answer:"
         )
     )
-    # ⚙ Load model locally (no Hugging Face key)
+
+    # ⚙ Load lightweight model (no Hugging Face key)
     pipe = pipeline(
         "text2text-generation",
-        model="google/flan-t5-base",   # lightweight model
+        model="google/flan-t5-base",
         tokenizer="google/flan-t5-base",
         max_new_tokens=256,
         temperature=0.5,
         repetition_penalty=1.1
     )
 
-    # Wrap the pipeline for LangChain
     llm = HuggingFacePipeline(pipeline=pipe)
-    # 🧩 Create RetrievalQA chain
-    qa_chain = RetrievalQA.from_chain_type(
+
+    # 🧩 Conversational Retrieval Chain
+    qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
-        chain_type="stuff",           # simpler and compatible
         retriever=retriever,
         return_source_documents=True,
-        chain_type_kwargs={"prompt": prompt}
+        combine_docs_chain_kwargs={"prompt": prompt}  # prompt replaced here
     )
-    return qa_chain
 
+    return qa_chain
 
 def generate_summary(chunks, max_new_tokens=300):
     """
@@ -116,6 +115,7 @@ def generate_summary(chunks, max_new_tokens=300):
     # Merge all partial summaries into one final summary
     final_summary = " ".join(summaries)
     return final_summary.strip()
+
 
 
 
