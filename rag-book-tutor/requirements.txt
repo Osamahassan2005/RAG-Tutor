@@ -2,11 +2,11 @@ streamlit
 langchain
 langchain-community
 langchain-huggingface
-transformers
+langchain-text-splitters
 faiss-cpu
 pypdf
-torch
 sentence-transformers
 numpy
 pandas
 Pillow
+
