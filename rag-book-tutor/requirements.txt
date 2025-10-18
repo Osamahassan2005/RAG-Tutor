@@ -1,5 +1,5 @@
 streamlit
-langchain
+langchain==0.0.350
 langchain-community
 langchain-core
 langchain-huggingface
@@ -10,5 +10,6 @@ sentence-transformers
 numpy
 pandas
 Pillow
+
 
 
