@@ -1,14 +1,16 @@
-pip
-streamlit
+streamlit==1.37.0
 langchain==0.0.350
+langchain-community==0.0.10
+langchain-huggingface==0.0.5
 transformers==4.33.3
-faiss-cpu
-pypdf
-torch
-sentence-transformers
-numpy
-pandas
-Pillow
+torch==2.0.1+cpu
+faiss-cpu==1.7.4
+sentence-transformers==2.2.2
+pypdf==3.17.1
+numpy==1.26.4
+pandas==2.2.2
+Pillow==10.2.0
+
 
 
 
