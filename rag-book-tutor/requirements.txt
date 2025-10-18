@@ -1,6 +1,7 @@
 streamlit
 langchain
 langchain-community
+langchain-core
 langchain-huggingface
 langchain-text-splitters
 faiss-cpu
@@ -9,4 +10,5 @@ sentence-transformers
 numpy
 pandas
 Pillow
+
 
