@@ -8,7 +8,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFacePipeline
 from transformers import pipeline
 from langchain_core.prompts import PromptTemplate
-from langchain.chains import RetrievalQA
+from langchain_community.chains.retrieval_qa.base import RetrievalQA
 
 @st.cache_data(show_spinner=False)
 def process_pdf(uploaded_file):
@@ -116,6 +116,7 @@ def generate_summary(chunks, max_new_tokens=300):
     # Merge all partial summaries into one final summary
     final_summary = " ".join(summaries)
     return final_summary.strip()
+
 
 
 
