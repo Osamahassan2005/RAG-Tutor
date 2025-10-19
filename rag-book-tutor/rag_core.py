@@ -13,6 +13,9 @@ from langchain.chains import ConversationalRetrievalChain
 @st.cache_data(show_spinner=False)
 def process_pdf(uploaded_file):
     all_docs=[]
+    import os
+    st.write("PDF path:", uploaded_file_path)
+    st.write("File exists:", os.path.exists(uploaded_file_path))
     for file in uploaded_file:
         # Save uploaded PDF to a temp file so PyPDFLoader can read it
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
@@ -168,6 +171,7 @@ def generate_summary(chunks: List,
     # Merge and optionally run a final short summarization pass (optional)
     final_summary = " ".join([s for s in summaries if s])
     return final_summary.strip()
+
 
 
 
