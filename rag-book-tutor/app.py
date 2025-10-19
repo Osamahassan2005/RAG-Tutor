@@ -199,7 +199,7 @@ st.markdown("""
 st.title("📚 Welcome to RAG Book Tutor")
 # PDF upload via Streamlit
 uploaded_file = st.sidebar.file_uploader("Upload PDF Textbook",type=["pdf"],accept_multiple_files=True)
-mode = st.sidebar.radio("Select Mode", ["Home","Q&A","Summary"])
+mode = st.sidebar.radio("Select Mode", ["Home","Q&A"])
 
 # Get the absolute path of the current directory (where app.py is)
 def load_image(image_name):
@@ -328,17 +328,10 @@ if uploaded_file is not None:
                            st.markdown(f"**Source {i}:** Page {page_num}")
                     # ✅ Update chat history
                     st.session_state["chat_history"].append((question, answer))
-    
-        elif mode == "Summary":
-            st.header("📘 Summary Generator")
-            st.image(load_image("summary.webp"))
-            if st.button("Generate Summary"):
-                with st.spinner("Summarizing your document..."):
-                    summary = generate_summary(st.session_state["chunks"])
-                    st.subheader("Summary:")
-                    st.write(summary)
+
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
