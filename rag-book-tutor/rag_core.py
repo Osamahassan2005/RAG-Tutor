@@ -10,7 +10,7 @@ from transformers import pipeline
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import ConversationalRetrievalChain
 
-@st.cache_data(hash_funcs={list:str, dict:str})
+@st.cache_data(show_spinner=False)
 def process_pdf(uploaded_file):
     all_docs=[]
     for file in uploaded_file:
@@ -25,12 +25,12 @@ def process_pdf(uploaded_file):
         all_docs.extend(documents)
     return all_docs
 
-@st.cache_data(show_spinner=False)
-def split_text(documents):
+@st.cache_data(hash_funcs={list:str, dict:str})
+def split_text(_documents):
     # Split pages into smaller chunks (to improve retrieval accuracy)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     print("Create chunkings...")
-    chunks = text_splitter.split_documents(documents)  # list of Documents (each ≤ ~1000 chars)
+    chunks = text_splitter.split_documents(_documents)  # list of Documents (each ≤ ~1000 chars)
     return chunks
 
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -115,6 +115,7 @@ def generate_summary(chunks, max_new_tokens=300):
     # Merge all partial summaries into one final summary
     final_summary = " ".join(summaries)
     return final_summary.strip()
+
 
 
 
