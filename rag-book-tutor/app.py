@@ -174,8 +174,7 @@ st.title("📚 Welcome to RAG Book Tutor")
 # PDF upload via Streamlit
 uploaded_file = st.sidebar.file_uploader("Upload PDF Textbook",type=["pdf"],accept_multiple_files=True)
 mode = st.sidebar.radio("Select Mode", ["Home","Q&A","Summary"])
-st.write("PDF path:", uploaded_file)
-st.write("File exists:", os.path.exists(uploaded_file))
+
 # Get the absolute path of the current directory (where app.py is)
 def load_image(image_name):
      base_path = os.path.join(os.path.dirname(__file__), "assets")
@@ -209,7 +208,8 @@ if uploaded_file is not None:
     # compute signature and compare with session state to avoid reprocessing unchanged uploads
     current_sig = _files_signature(files)
     prev_sig = st.session_state.get("uploaded_sig")
-
+    st.write("PDF path:", files)
+#st.write("File exists:", os.path.exists(uploaded_file))
     if prev_sig != current_sig:
         # New upload or changed files -> (re)process and store results in session_state
         with st.spinner("*Processing PDF...*"):
@@ -315,6 +315,7 @@ if uploaded_file is not None:
                     st.write(summary)
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
