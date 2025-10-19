@@ -46,6 +46,18 @@ def create_embeddings(_chunks):
     retriever = vector_db.as_retriever(search_kwargs={"k":3})
     return retriever
 
+@st.cache_resource
+def get_pipe():
+    return pipeline(
+        "text2text-generation",
+        model="google/flan-t5-small",
+        tokenizer="google/flan-t5-small",
+        max_new_tokens=256,
+        temperature=0.5,
+        repetition_penalty=1.1,
+        device=-1
+    )
+
 def create_qa_chain(retriever):
     # 🧠 Custom prompt
     prompt = PromptTemplate(
@@ -58,19 +70,9 @@ def create_qa_chain(retriever):
             "Detailed Answer:"
         )
     )
-
     # ⚙ Load lightweight model (no Hugging Face key)
-    pipe = pipeline(
-        "text2text-generation",
-        model="google/flan-t5-base",
-        tokenizer="google/flan-t5-base",
-        max_new_tokens=256,
-        temperature=0.5,
-        repetition_penalty=1.1
-    )
-
+    pipe = get_pipe() 
     llm = HuggingFacePipeline(pipeline=pipe)
-
     # 🧩 Conversational Retrieval Chain
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -124,3 +126,4 @@ def generate_summary(chunks, max_new_tokens=150):
 
     final_summary = " ".join(summaries)
     return final_summary.strip()
+
