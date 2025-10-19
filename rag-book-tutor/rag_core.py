@@ -81,8 +81,6 @@ def create_qa_chain(retriever):
 
     return qa_chain
 
-import streamlit as st
-from transformers import pipeline
 from typing import List
 
 # Cache the summarizer so the model is loaded only once per process
@@ -170,6 +168,7 @@ def generate_summary(chunks: List,
     # Merge and optionally run a final short summarization pass (optional)
     final_summary = " ".join([s for s in summaries if s])
     return final_summary.strip()
+
 
 
 
