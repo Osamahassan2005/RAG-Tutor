@@ -21,7 +21,7 @@ def process_pdf(uploaded_file):
         # Load the PDF using LangChain’s PyPDFLoader
         st.write("Document loading...")
         import os
-        st.write("PDF path:", uploaded_file_path)
+        st.write("PDF path:", uploaded_file)
         #st.write("File exists:", os.path.exists(uploaded_file_path))
         loader = PyPDFLoader(tmp_path)
         documents = loader.load()# list of Documents, one per page
@@ -171,6 +171,7 @@ def generate_summary(chunks: List,
     # Merge and optionally run a final short summarization pass (optional)
     final_summary = " ".join([s for s in summaries if s])
     return final_summary.strip()
+
 
 
 
