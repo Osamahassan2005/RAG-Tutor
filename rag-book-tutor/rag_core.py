@@ -25,11 +25,13 @@ def process_pdf(uploaded_file):
         all_docs.extend(documents)
     return all_docs
 
-@st.cache_data(hash_funcs={list:str, dict:str})
+@st.cache_data(hash_funcs={list:lambda x:str(x), dict:lambda x:str(x)})
 def split_text(_documents):
     # Split pages into smaller chunks (to improve retrieval accuracy)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     print("Create chunkings...")
+    for i, doc in enumerate(_documents):
+        print(f"Page {i+1} content preview:", doc.page_content[:200])
     chunks = text_splitter.split_documents(_documents)  # list of Documents (each ≤ ~1000 chars)
     return chunks
 
@@ -82,4 +84,5 @@ def create_qa_chain(retriever):
     )
 
     return qa_chain
+
 
