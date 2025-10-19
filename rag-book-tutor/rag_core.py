@@ -81,119 +81,46 @@ def create_qa_chain(retriever):
 
     return qa_chain
 
-from typing import List
-
-# Cache the summarizer so the model is loaded only once per process
 @st.cache_resource
-def get_summarizer(model_name: str = "sshleifer/distilbart-cnn-12-6"):
+def get_summarizer():
+    # Use a small and fast model (T5 small)
     return pipeline(
         "summarization",
-        model=model_name,
-        tokenizer=model_name,
-        device=-1
+        model="t5-small",
+        tokenizer="t5-small",
+        framework="pt",
+        device=-1  # CPU
     )
 
-def generate_summary(chunks: List, 
-                     model_name: str = "sshleifer/distilbart-cnn-12-6",
-                     total_word_limit: int = 1500,
-                     chunk_word_size: int = 400,
-                     max_new_tokens: int = 150):
-    """
-    Summarize safely:
-      - Use cached pipeline
-      - Limit total words taken from chunks (total_word_limit)
-      - Split into word chunks (chunk_word_size)
-      - Summarize each chunk and join results
-    Returns the final summary string.
-    """
+def generate_summary(chunks, max_new_tokens=150):
     if not chunks:
         return "❌ No text found to summarize."
 
-    # Build a text budget from chunks (stop when we've reached the word budget)
-    words = []
-    for doc in chunks:
-        # protect against non-text chunks
-        text = getattr(doc, "page_content", None)
-        if not text:
-            continue
-        words.extend(text.split())
-        if len(words) >= total_word_limit:
-            break
-    if not words:
-        return "❌ No text content available in the provided chunks."
+    summarizer = get_summarizer()
 
-    # Trim to the budget and split into smaller parts
-    words = words[:total_word_limit]
-    parts = [" ".join(words[i:i+chunk_word_size]) for i in range(0, len(words), chunk_word_size)]
-
-    # Get the cached summarizer (may raise; we catch below)
-    try:
-        summarizer = get_summarizer(model_name)
-    except Exception as e:
-        # If model load fails, try a very small fallback
-        try:
-            summarizer = get_summarizer("t5-small")
-            model_name = "t5-small"
-        except Exception as e2:
-            return f"❌ Failed to load summarizer models: {e} ; {e2}"
+    # Combine only a limited number of chunks
+    text_data = " ".join([chunk.page_content for chunk in chunks[:3]])
+    words = text_data.split()
+    chunk_size = 300
+    text_parts = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
 
     summaries = []
-    progress = None
-    try:
-        progress = st.progress(0)
-    except Exception:
-        progress = None
+    progress = st.progress(0)
 
-    for i, part in enumerate(parts):
+    for i, part in enumerate(text_parts):
+        st.write(f"🔹 Summarizing part {i+1}/{len(text_parts)}...")  # Debug print
         try:
-            # request a summary for this part; tune max_length/min_length if necessary
-            out = summarizer(
+            output = summarizer(
                 part,
                 max_length=max_new_tokens,
                 min_length=30,
-                do_sample=False,
-                clean_up_tokenization_spaces=True
-            )
-            # most summarizers return list of dicts with 'summary_text' or 'generated_text'
-            summary_piece = out[0].get("summary_text") or out[0].get("generated_text") or str(out[0])
-            summaries.append(summary_piece.strip())
+                do_sample=False
+            )[0]['summary_text']
+            summaries.append(output.strip())
         except Exception as e:
-            # If a chunk fails, skip it but record an error note
-            summaries.append(f"[⚠ skipped part due to: {e}]")
+            summaries.append(f"[⚠ Error on part {i+1}: {e}]")
 
-        # update progress
-        if progress:
-            progress.progress(int((i + 1) / len(parts) * 100))
+        progress.progress((i + 1) / len(text_parts))
 
-    # Merge and optionally run a final short summarization pass (optional)
-    final_summary = " ".join([s for s in summaries if s])
+    final_summary = " ".join(summaries)
     return final_summary.strip()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
