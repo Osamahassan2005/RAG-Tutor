@@ -176,14 +176,41 @@ st.title("📚 Welcome to RAG Book Tutor")
 
 # PDF upload via Streamlit
 uploaded_file = st.sidebar.file_uploader("Upload PDF Textbook",type=["pdf"],accept_multiple_files=True)
-mode = st.sidebar.radio("Select Mode", ["Home","Q&A"])
+mode = st.sidebar.radio("Select Mode", ["Home","Q&A","Clear"])
 
 # Get the absolute path of the current directory (where app.py is)
 def load_image(image_name):
      base_path = os.path.join(os.path.dirname(__file__), "assets")
      image_path = os.path.join(base_path, image_name)
      return Image.open(image_path)
+def clear_chat():
+    st.session_state.messages = []
+    st.session_state.conversation = None
+    st.session_state.chat_history = []
+    st.success("💬 Chat history cleared!")
+    st.rerun()
 
+def clear_cache():
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    st.success("✅ Streamlit cache cleared! Please re-upload your document.")
+    st.stop()
+
+def clear_all_caches():
+    cache_paths = [
+        os.path.expanduser("~/.cache/torch"),
+        os.path.expanduser("~/.cache/huggingface/transformers"),
+        os.path.expanduser("~/.streamlit/cache")
+    ]
+    for path in cache_paths:
+        if os.path.exists(path):
+            try:
+                shutil.rmtree(path)
+            except Exception as e:
+                print(f"⚠️ Could not clear {path}: {e}")
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    clear_cache()
 # --- small helper: signature to detect changed uploads ---
 def _files_signature(files):
     """
@@ -276,7 +303,20 @@ if uploaded_file is not None:
 
     💡 *Note:* This app uses AI-powered retrieval, so answers are based on your uploaded documents.
     """) 
+    elif mode == "Clear":
+         st.title("🧹 Maintenance Tools")
+         st.write("Manage your session and cache here.")
 
+         if st.button("🧹 Clear Chat"):
+            clear_chat()
+
+         if st.button("♻️ Clear Cache"):
+            clear_cache()
+
+         if st.button("🧠 Full Reset (All Caches)"):
+            clear_all_caches()
+
+         st.info("After clearing cache, re-upload your document before asking questions again.")
     elif st.session_state.get("chunks"):
         if mode == 'Q&A':
            st.image(load_image("qa.jpg"))
@@ -307,6 +347,7 @@ if uploaded_file is not None:
                     st.session_state["chat_history"].append((question, answer))
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
