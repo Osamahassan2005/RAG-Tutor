@@ -192,6 +192,11 @@ st.markdown("""
 
 #app
 st.title("📚 Welcome to RAG Book Tutor")
+if st.button("🧹 Reset Streamlit Cache"):
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    st.success("✅ Streamlit cache cleared. Please upload your file again.")
+    st.stop()
 # PDF upload via Streamlit
 uploaded_file = st.sidebar.file_uploader("Upload PDF Textbook",type=["pdf"],accept_multiple_files=True)
 mode = st.sidebar.radio("Select Mode", ["Home","Q&A","Clear-Cache"])
@@ -329,6 +334,7 @@ if uploaded_file is not None:
                     st.session_state["chat_history"].append((question, answer))
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
