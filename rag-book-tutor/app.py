@@ -6,6 +6,32 @@ from PIL import Image
 #existing imports from rag_core
 from rag_core import process_pdf, split_text, create_embeddings, create_qa_chain, generate_summary
 
+import shutil
+import torch
+
+# Define cache paths
+cache_paths = [
+    os.path.expanduser("~/.cache/torch"),
+    os.path.expanduser("~/.cache/huggingface/transformers"),
+    os.path.expanduser("~/.streamlit/cache")
+]
+
+def clear_cache():
+    print("🧹 Checking and clearing cache folders if exist...")
+    for path in cache_paths:
+        if os.path.exists(path):
+            try:
+                shutil.rmtree(path)
+                print(f"✅ Cleared cache: {path}")
+            except Exception as e:
+                print(f"⚠️ Could not clear {path}: {e}")
+
+    # Clear PyTorch internal cache
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        print("🧠 Torch CUDA cache cleared.")
+
+clear_cache()
 # ---- Apply custom CSS ----
 st.markdown("""
      <style>
@@ -313,6 +339,7 @@ if uploaded_file is not None:
                     st.write(summary)
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
