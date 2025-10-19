@@ -194,7 +194,7 @@ def clear_cache():
     st.cache_data.clear()
     st.cache_resource.clear()
     st.success("✅ Streamlit cache cleared! Please re-upload your document.")
-    st.stop()
+    st.rerun()
 
 def clear_all_caches():
     cache_paths = [
@@ -304,7 +304,7 @@ if uploaded_file is not None:
     💡 *Note:* This app uses AI-powered retrieval, so answers are based on your uploaded documents.
     """) 
     elif mode == "Clear":
-         st.title("🧹 Maintenance Tools")
+         st.header("🧹 Maintenance Tools")
          st.write("Manage your session and cache here.")
 
          if st.button("🧹 Clear Chat"):
@@ -319,6 +319,7 @@ if uploaded_file is not None:
          st.info("After clearing cache, re-upload your document before asking questions again.")
     elif st.session_state.get("chunks"):
         if mode == 'Q&A':
+           st.header("📝Q&A") 
            st.image(load_image("qa.jpg"))
            question = st.text_input("Enter your question about the textbook:")
            if st.button("Get Answer") and question:
@@ -347,6 +348,7 @@ if uploaded_file is not None:
                     st.session_state["chat_history"].append((question, answer))
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
