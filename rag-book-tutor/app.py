@@ -192,12 +192,9 @@ st.markdown("""
 
 #app
 st.title("📚 Welcome to RAG Book Tutor")
-if st.sidebar.button("Clear cache"):
-    clear_cache()
-    st.rerun()
 # PDF upload via Streamlit
 uploaded_file = st.sidebar.file_uploader("Upload PDF Textbook",type=["pdf"],accept_multiple_files=True)
-mode = st.sidebar.radio("Select Mode", ["Home","Q&A"])
+mode = st.sidebar.radio("Select Mode", ["Home","Q&A","Clear-Cache"])
 
 # Get the absolute path of the current directory (where app.py is)
 def load_image(image_name):
@@ -326,9 +323,13 @@ if uploaded_file is not None:
                            st.markdown(f"**Source {i}:** Page {page_num}")
                     # ✅ Update chat history
                     st.session_state["chat_history"].append((question, answer))
-
+        elif mode == "clear-Cache":
+            if st.button("Clear cache"):
+               clear_cache()
+               st.rerun()
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
