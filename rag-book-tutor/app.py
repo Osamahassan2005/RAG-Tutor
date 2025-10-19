@@ -281,7 +281,7 @@ if uploaded_file is not None:
                else:
                     with st.spinner("Retrieving answer..."):
                        # use invoke() as recommended by langchain
-                       result = qa_chain.invoke({"query": question})
+                       result = qa_chain.invoke({qa_chain.input_keys[0]: question})
                     answer = result.get("result", result.get("answer", ""))
                     st.markdown("Answer: " + answer)
                     st.markdown("Sources:")
@@ -298,5 +298,6 @@ if uploaded_file is not None:
                     st.write(summary)
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
