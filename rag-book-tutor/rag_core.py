@@ -29,7 +29,7 @@ def process_pdf(uploaded_file):
 def split_text(_documents):
     # Split pages into smaller chunks (to improve retrieval accuracy)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    st.write("Create chunkings...")
+    print("Create chunkings...")
     chunks = text_splitter.split_documents(_documents)  # list of Documents (each ≤ ~1000 chars)
     return chunks
 
@@ -168,6 +168,7 @@ def generate_summary(chunks: List,
     # Merge and optionally run a final short summarization pass (optional)
     final_summary = " ".join([s for s in summaries if s])
     return final_summary.strip()
+
 
 
 
