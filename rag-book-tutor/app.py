@@ -6,32 +6,25 @@ from PIL import Image
 #existing imports from rag_core
 from rag_core import process_pdf, split_text, create_embeddings, create_qa_chain
 
-import shutil
-import torch
-
-# Define cache paths
 cache_paths = [
     os.path.expanduser("~/.cache/torch"),
-    os.path.expanduser("~/.cache/huggingface/transformers"),
-    os.path.expanduser("~/.streamlit/cache")
+    os.path.expanduser("~/.cache/huggingface/transformers")
 ]
 
 def clear_cache():
-    print("🧹 Checking and clearing cache folders if exist...")
+    st.write("🧹 Clearing cache folders...")
     for path in cache_paths:
         if os.path.exists(path):
             try:
                 shutil.rmtree(path)
-                print(f"✅ Cleared cache: {path}")
+                st.write(f"✅ Cleared cache: {path}")
             except Exception as e:
-                print(f"⚠️ Could not clear {path}: {e}")
+                st.write(f"⚠️ Could not clear {path}: {e}")
 
     # Clear PyTorch internal cache
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         print("🧠 Torch CUDA cache cleared.")
-
-clear_cache()
 # ---- Apply custom CSS ----
 st.markdown("""
      <style>
@@ -197,6 +190,9 @@ st.markdown("""
 
 #app
 st.title("📚 Welcome to RAG Book Tutor")
+if st.sidebar.button("Clear cache"):
+    clear_cache()
+    st.experimental_rerun()
 # PDF upload via Streamlit
 uploaded_file = st.sidebar.file_uploader("Upload PDF Textbook",type=["pdf"],accept_multiple_files=True)
 mode = st.sidebar.radio("Select Mode", ["Home","Q&A"])
@@ -243,11 +239,6 @@ if uploaded_file is not None:
             with st.spinner("Splitting text..."):
                 chunks = split_text(documents)
                 st.session_state["chunks"] = chunks
-                
-                st.write("Number of chunks created:", len(chunks))
-
-                for i, chunk in enumerate(chunks[:5]):
-                    st.write(f"Chunk {i+1} preview:", chunk.page_content[:200])
 
             if chunks:
                 with st.spinner("Creating embeddings..."):
@@ -336,6 +327,7 @@ if uploaded_file is not None:
 
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
