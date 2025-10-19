@@ -20,6 +20,9 @@ def process_pdf(uploaded_file):
             tmp_path = tmp.name
         # Load the PDF using LangChain’s PyPDFLoader
         st.write("Document loading...")
+        import os
+        st.write("PDF path:", uploaded_file_path)
+        #st.write("File exists:", os.path.exists(uploaded_file_path))
         loader = PyPDFLoader(tmp_path)
         documents = loader.load()# list of Documents, one per page
         all_docs.extend(documents)
@@ -29,7 +32,7 @@ def process_pdf(uploaded_file):
 def split_text(_documents):
     # Split pages into smaller chunks (to improve retrieval accuracy)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    print("Create chunkings...")
+    st.write("Create chunkings...")
     chunks = text_splitter.split_documents(_documents)  # list of Documents (each ≤ ~1000 chars)
     return chunks
 
@@ -168,6 +171,7 @@ def generate_summary(chunks: List,
     # Merge and optionally run a final short summarization pass (optional)
     final_summary = " ".join([s for s in summaries if s])
     return final_summary.strip()
+
 
 
 
