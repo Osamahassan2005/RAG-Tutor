@@ -324,11 +324,12 @@ if uploaded_file is not None:
                     # ✅ Update chat history
                     st.session_state["chat_history"].append((question, answer))
         elif mode == "clear-Cache":
-            if st.button("Clear cache"):
-               clear_cache()
-               st.rerun()
+             if st.button("Clear cache"):
+                clear_cache()
+                st.rerun()
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
