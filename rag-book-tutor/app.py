@@ -294,9 +294,10 @@ if uploaded_file is not None:
 
     💡 *Note:* This app uses AI-powered retrieval, so answers are based on your uploaded documents.
     """)
-    elif st.button("Clear cache"):
-         clear_cache()
-         st.rerun()
+    elif mode == "Clear-Cache":
+         if st.button("Clear cache"):
+            clear_cache()
+            st.rerun()
 
     elif st.session_state.get("chunks"):
         if mode == 'Q&A':
@@ -328,6 +329,7 @@ if uploaded_file is not None:
                     st.session_state["chat_history"].append((question, answer))
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
