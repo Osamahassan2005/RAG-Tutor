@@ -295,14 +295,13 @@ if uploaded_file is not None:
                     st.markdown("### Answer")
                     st.write(answer)
 
-                    # Show sources if available
+                    # 📚 Show sources if available
                     if result.get("source_documents"):
-                       st.markdown("### Sources")
-                       for doc in result["source_documents"]:
+                       st.markdown("### 📄 Sources")
+                       for i, doc in enumerate(result["source_documents"], start=1):
                            page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
-                           st.write(f"- Page {page_num}")
-
-                      # ✅ Update chat history
+                           st.markdown(f"**Source {i}:** Page {page_num}")
+                    # ✅ Update chat history
                     st.session_state["chat_history"].append((question, answer))
     
         elif mode == "Summary":
@@ -315,6 +314,7 @@ if uploaded_file is not None:
                     st.write(summary)
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
