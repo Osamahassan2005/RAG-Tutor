@@ -8,25 +8,6 @@ from PIL import Image
 #existing imports from rag_core
 from rag_core import process_pdf, split_text, create_embeddings, create_qa_chain
 
-cache_paths = [
-    os.path.expanduser("~/.cache/torch"),
-    os.path.expanduser("~/.cache/huggingface/transformers")
-]
-
-def clear_cache():
-    st.write("🧹 Clearing cache folders...")
-    for path in cache_paths:
-        if os.path.exists(path):
-            try:
-                shutil.rmtree(path)
-                st.write(f"✅ Cleared cache: {path}")
-            except Exception as e:
-                st.write(f"⚠️ Could not clear {path}: {e}")
-
-    # Clear PyTorch internal cache
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-        print("🧠 Torch CUDA cache cleared.")
 # ---- Apply custom CSS ----
 st.markdown("""
      <style>
@@ -192,14 +173,10 @@ st.markdown("""
 
 #app
 st.title("📚 Welcome to RAG Book Tutor")
-if st.button("🧹 Reset Streamlit Cache"):
-    st.cache_data.clear()
-    st.cache_resource.clear()
-    st.success("✅ Streamlit cache cleared. Please upload your file again.")
-    st.stop()
+
 # PDF upload via Streamlit
 uploaded_file = st.sidebar.file_uploader("Upload PDF Textbook",type=["pdf"],accept_multiple_files=True)
-mode = st.sidebar.radio("Select Mode", ["Home","Q&A","Clear-Cache"])
+mode = st.sidebar.radio("Select Mode", ["Home","Q&A"])
 
 # Get the absolute path of the current directory (where app.py is)
 def load_image(image_name):
@@ -298,11 +275,7 @@ if uploaded_file is not None:
        - For large files, processing may take a few seconds.  
 
     💡 *Note:* This app uses AI-powered retrieval, so answers are based on your uploaded documents.
-    """)
-    elif mode == "Clear-Cache":
-         if st.button("Clear cache"):
-            clear_cache()
-            st.rerun()
+    """) 
 
     elif st.session_state.get("chunks"):
         if mode == 'Q&A':
@@ -334,6 +307,7 @@ if uploaded_file is not None:
                     st.session_state["chat_history"].append((question, answer))
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
