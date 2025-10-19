@@ -4,7 +4,7 @@ import streamlit as st
 import hashlib
 from PIL import Image
 #existing imports from rag_core
-from rag_core import process_pdf, split_text, create_embeddings, create_qa_chain, generate_summary
+from rag_core import process_pdf, split_text, create_embeddings, create_qa_chain
 
 import shutil
 import torch
@@ -331,6 +331,7 @@ if uploaded_file is not None:
 
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
