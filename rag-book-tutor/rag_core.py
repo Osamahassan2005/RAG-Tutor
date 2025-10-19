@@ -13,16 +13,13 @@ from langchain.chains import ConversationalRetrievalChain
 @st.cache_data(show_spinner=False)
 def process_pdf(uploaded_file):
     all_docs=[]
-    import os
-    st.write("PDF path:", uploaded_file)
-    st.write("File exists:", os.path.exists(uploaded_file))
     for file in uploaded_file:
         # Save uploaded PDF to a temp file so PyPDFLoader can read it
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             tmp.write(file.read())
             tmp_path = tmp.name
         # Load the PDF using LangChain’s PyPDFLoader
-        print("Document loading...")
+        st.write("Document loading...")
         loader = PyPDFLoader(tmp_path)
         documents = loader.load()# list of Documents, one per page
         all_docs.extend(documents)
@@ -32,7 +29,7 @@ def process_pdf(uploaded_file):
 def split_text(_documents):
     # Split pages into smaller chunks (to improve retrieval accuracy)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    print("Create chunkings...")
+    st.write("Create chunkings...")
     chunks = text_splitter.split_documents(_documents)  # list of Documents (each ≤ ~1000 chars)
     return chunks
 
@@ -40,7 +37,7 @@ embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 @st.cache_data(show_spinner=False)
 def create_embeddings(_chunks):
     # Create embeddings and vector store index
-    print('creating embeddings...')
+    st.write('creating embeddings...')
     vector_db = FAISS.from_documents(
     documents=_chunks,
     embedding=embeddings,
@@ -171,6 +168,7 @@ def generate_summary(chunks: List,
     # Merge and optionally run a final short summarization pass (optional)
     final_summary = " ".join([s for s in summaries if s])
     return final_summary.strip()
+
 
 
 
