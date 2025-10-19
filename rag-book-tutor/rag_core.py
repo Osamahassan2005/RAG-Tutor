@@ -50,7 +50,7 @@ def create_embeddings(_chunks):
 def get_pipe():
     return pipeline(
         "text2text-generation",
-        model="google/flan-t5-small",
+        model="google/flan-t5-base",
         tokenizer="google/flan-t5-small",
         max_new_tokens=256,
         temperature=0.5,
@@ -82,48 +82,3 @@ def create_qa_chain(retriever):
     )
 
     return qa_chain
-
-@st.cache_resource
-def get_summarizer():
-    # Use a small and fast model (T5 small)
-    return pipeline(
-        "summarization",
-        model="t5-small",
-        tokenizer="t5-small",
-        framework="pt",
-        device=-1  # CPU
-    )
-
-def generate_summary(chunks, max_new_tokens=150):
-    if not chunks:
-        return "❌ No text found to summarize."
-
-    summarizer = get_summarizer()
-
-    # Combine only a limited number of chunks
-    text_data = " ".join([chunk.page_content for chunk in chunks[:3]])
-    words = text_data.split()
-    chunk_size = 300
-    text_parts = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
-
-    summaries = []
-    progress = st.progress(0)
-
-    for i, part in enumerate(text_parts):
-        st.write(f"🔹 Summarizing part {i+1}/{len(text_parts)}...")  # Debug print
-        try:
-            output = summarizer(
-                part,
-                max_length=max_new_tokens,
-                min_length=30,
-                do_sample=False
-            )[0]['summary_text']
-            summaries.append(output.strip())
-        except Exception as e:
-            summaries.append(f"[⚠ Error on part {i+1}: {e}]")
-
-        progress.progress((i + 1) / len(text_parts))
-
-    final_summary = " ".join(summaries)
-    return final_summary.strip()
-
