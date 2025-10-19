@@ -243,6 +243,11 @@ if uploaded_file is not None:
             with st.spinner("Splitting text..."):
                 chunks = split_text(documents)
                 st.session_state["chunks"] = chunks
+                
+                st.write("Number of chunks created:", len(chunks))
+
+                for i, chunk in enumerate(chunks[:5]):
+                    st.write(f"Chunk {i+1} preview:", chunk.page_content[:200])
 
             if chunks:
                 with st.spinner("Creating embeddings..."):
@@ -331,6 +336,7 @@ if uploaded_file is not None:
 
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
