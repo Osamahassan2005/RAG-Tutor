@@ -19,7 +19,7 @@ def process_pdf(uploaded_file):
             tmp.write(file.read())
             tmp_path = tmp.name
         # Load the PDF using LangChain’s PyPDFLoader
-        st.write("Document loading...")
+        print("Document loading...")
         loader = PyPDFLoader(tmp_path)
         documents = loader.load()# list of Documents, one per page
         all_docs.extend(documents)
@@ -29,7 +29,7 @@ def process_pdf(uploaded_file):
 def split_text(_documents):
     # Split pages into smaller chunks (to improve retrieval accuracy)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    st.write("Create chunkings...")
+    print("Create chunkings...")
     chunks = text_splitter.split_documents(_documents)  # list of Documents (each ≤ ~1000 chars)
     return chunks
 
@@ -37,7 +37,7 @@ embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 @st.cache_data(show_spinner=False)
 def create_embeddings(_chunks):
     # Create embeddings and vector store index
-    st.write('creating embeddings...')
+    print('creating embeddings...')
     vector_db = FAISS.from_documents(
     documents=_chunks,
     embedding=embeddings,
@@ -168,6 +168,7 @@ def generate_summary(chunks: List,
     # Merge and optionally run a final short summarization pass (optional)
     final_summary = " ".join([s for s in summaries if s])
     return final_summary.strip()
+
 
 
 
