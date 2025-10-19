@@ -195,6 +195,10 @@ def _files_signature(files):
         f.seek(0)
         sig.append((f.name, h))
     return tuple(sig)
+     # Initialize session keys once
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = []
+
 # --- end helper ---
 
 if uploaded_file is not None:
@@ -279,19 +283,28 @@ if uploaded_file is not None:
                if qa_chain is None:
                    st.error("QA chain is not ready. Please re-upload the PDF or wait until embeddings finish.")
                else:
-                    st.write("Chain expects:", getattr(qa_chain, "input_keys", None))
                     with st.spinner("Retrieving answer..."):
-                       # use invoke() as recommended by langchain
-                       result = qa_chain.invoke({
-                             "context": "",
-                             "question": question
+                         result = qa_chain.invoke({
+                         "question": question,
+                         "chat_history": st.session_state["chat_history"]
                           })
-                    answer = result.get("result", result.get("answer", ""))
-                    st.markdown("Answer: " + answer)
-                    st.markdown("Sources:")
-                    for doc in result.get("source_documents", []):
-                        page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
-                        st.write(f"- Page {page_num}")
+
+                    # Extract answer safely
+                    answer = result.get("answer", result.get("result", result.get("output_text", "No answer found")))
+
+                    st.markdown("### Answer")
+                    st.write(answer)
+
+                    # Show sources if available
+                    if result.get("source_documents"):
+                       st.markdown("### Sources")
+                       for doc in result["source_documents"]:
+                           page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
+                           st.write(f"- Page {page_num}")
+
+                      # ✅ Update chat history
+                    st.session_state["chat_history"].append((question, answer))
+    
         elif mode == "Summary":
             st.header("📘 Summary Generator")
             st.image(load_image("summary.webp"))
@@ -302,6 +315,7 @@ if uploaded_file is not None:
                     st.write(summary)
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
