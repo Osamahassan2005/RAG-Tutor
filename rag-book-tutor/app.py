@@ -279,6 +279,7 @@ if uploaded_file is not None:
                if qa_chain is None:
                    st.error("QA chain is not ready. Please re-upload the PDF or wait until embeddings finish.")
                else:
+                    st.write("Chain expects:", getattr(qa_chain, "input_keys", None))
                     with st.spinner("Retrieving answer..."):
                        # use invoke() as recommended by langchain
                        result = qa_chain.invoke({
@@ -301,6 +302,7 @@ if uploaded_file is not None:
                     st.write(summary)
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
