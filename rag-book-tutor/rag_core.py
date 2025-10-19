@@ -51,7 +51,7 @@ def get_pipe():
     return pipeline(
         "text2text-generation",
         model="google/flan-t5-base",
-        tokenizer="google/flan-t5-small",
+        tokenizer="google/flan-t5-base",
         max_new_tokens=256,
         temperature=0.5,
         repetition_penalty=1.1,
@@ -82,3 +82,4 @@ def create_qa_chain(retriever):
     )
 
     return qa_chain
+
