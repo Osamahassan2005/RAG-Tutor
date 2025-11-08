@@ -107,21 +107,13 @@ rag-book-tutor/
 
 │
 
-├─ app.py        
+├─ app.py        # Main Streamlit app
 
-# Main Streamlit app
+├─ rag_core.py    # Core RAG functions
 
-├─ rag_core.py    
+├─ requirements.txt # Python dependencies
 
-# Core RAG functions
-
-├─ requirements.txt 
-
-# Python dependencies
-
-├─ assets/         
-
-# Images, logos, or static files
+├─ assets/         # Images, logos, or static files
 
 ├─ README.md
 
