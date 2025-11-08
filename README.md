@@ -135,11 +135,6 @@ rag-book-tutor/
 
 ## References
 
-Streamlit Documentation
+https://www.langchain.com/docs/
 
-LangChain Documentation
-
-Hugging Face Transformers
-
-FAISS for Similarity Search
-
+https://docs.streamlit.io/
