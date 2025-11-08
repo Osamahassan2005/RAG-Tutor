@@ -65,8 +65,9 @@ streamlit run RAG-tutor/app.py
 
 5. The app retrieves relevant sections and shows:
 
--Answer
--Source page numbers
+Answer
+
+Sourcepage numbers
 
 
 
@@ -74,19 +75,19 @@ streamlit run RAG-tutor/app.py
 
 Function	Description
 
--process_pdf(file_path)	
+1. process_pdf(file_path)	
 Reads PDF and converts pages into Document objects with metadata.
 
--split_text(_documents) 
+2. split_text(_documents) 
 Splits document pages into smaller chunks (~500 chars) for better retrieval. Uses @st.cache_data for caching.
 
--create_embeddings(chunks)
+3. create_embeddings(chunks)
 Converts chunks into vector embeddings using sentence-transformers.
 
--create_qa_chain(retriever)	
+4. create_qa_chain(retriever)	
 Creates the QA chain using google/flan-t5-base and a custom prompt. Supports chat_history.
 
--generate_summary(text)
+5. generate_summary(text)
 Summarizes a section or PDF content. Optional for quick overviews.
 
 
@@ -110,7 +111,6 @@ rag-book-tutor/
 ├─ assets/                 # Images, logos, or static files
 ├─ README.md
 └─ .gitignore
-
 
 ## Contributing
 
