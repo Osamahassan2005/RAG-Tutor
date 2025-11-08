@@ -104,12 +104,27 @@ Caching improves performance for repeated queries.
 ## File Structure
 
 rag-book-tutor/
+
 │
-├─ app.py                  # Main Streamlit app
-├─ rag_core.py             # Core RAG functions
-├─ requirements.txt        # Python dependencies
-├─ assets/                 # Images, logos, or static files
+
+├─ app.py        
+
+# Main Streamlit app
+
+├─ rag_core.py    
+
+# Core RAG functions
+
+├─ requirements.txt 
+
+# Python dependencies
+
+├─ assets/         
+
+# Images, logos, or static files
+
 ├─ README.md
+
 └─ .gitignore
 
 ## Contributing
