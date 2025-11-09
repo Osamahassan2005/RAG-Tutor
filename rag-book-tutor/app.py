@@ -1,5 +1,5 @@
 import os
-import torch
+#import torch
 import shutil 
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 import streamlit as st
@@ -183,34 +183,34 @@ def load_image(image_name):
      base_path = os.path.join(os.path.dirname(__file__), "assets")
      image_path = os.path.join(base_path, image_name)
      return Image.open(image_path)
-def clear_chat():
-    st.session_state.messages = []
-    st.session_state.conversation = None
-    st.session_state.chat_history = []
-    st.success("💬 Chat history cleared!")
-    st.rerun()
+# def clear_chat():
+#     st.session_state.messages = []
+#     st.session_state.conversation = None
+#     st.session_state.chat_history = []
+#     st.success("💬 Chat history cleared!")
+#     st.rerun()
 
-def clear_cache():
-    st.cache_data.clear()
-    st.cache_resource.clear()
-    st.success("✅ Streamlit cache cleared! Please re-upload your document.")
-    st.rerun()
+# def clear_cache():
+#     st.cache_data.clear()
+#     st.cache_resource.clear()
+#     st.success("✅ Streamlit cache cleared! Please re-upload your document.")
+#     st.rerun()
 
-def clear_all_caches():
-    cache_paths = [
-        os.path.expanduser("~/.cache/torch"),
-        os.path.expanduser("~/.cache/huggingface/transformers"),
-        os.path.expanduser("~/.streamlit/cache")
-    ]
-    for path in cache_paths:
-        if os.path.exists(path):
-            try:
-                shutil.rmtree(path)
-            except Exception as e:
-                print(f"⚠️ Could not clear {path}: {e}")
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    clear_cache()
+# def clear_all_caches():
+#     cache_paths = [
+#         os.path.expanduser("~/.cache/torch"),
+#         os.path.expanduser("~/.cache/huggingface/transformers"),
+#         os.path.expanduser("~/.streamlit/cache")
+#     ]
+#     for path in cache_paths:
+#         if os.path.exists(path):
+#             try:
+#                 shutil.rmtree(path)
+#             except Exception as e:
+#                 print(f"⚠️ Could not clear {path}: {e}")
+#     if torch.cuda.is_available():
+#         torch.cuda.empty_cache()
+#     clear_cache()
 # --- small helper: signature to detect changed uploads ---
 def _files_signature(files):
     """
@@ -230,45 +230,42 @@ if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
 
 # --- end helper ---
-
+# Remove all clear_cache and clear_all_caches functions
+# Keep only clear_chat for conversation history
+def clear_chat():
+    st.session_state.messages = []
+    st.session_state.conversation = None
+    st.session_state.chat_history = []
+    st.success("💬 Chat history cleared!")
+    st.rerun()
 # Remove the manual cache clearing buttons and replace with automatic handling
 
 if uploaded_file is not None:
     # normalize to a list even if a single file is provided
     files = uploaded_file if isinstance(uploaded_file, list) else [uploaded_file]
 
-    # compute signature and compare with session state
+    # compute signature and compare with session state to avoid reprocessing unchanged uploads
     current_sig = _files_signature(files)
     prev_sig = st.session_state.get("uploaded_sig")
     
     if prev_sig != current_sig:
-        # NEW FILE DETECTED - AUTO CLEAR PREVIOUS STATE
-        st.info("🔄 New file detected - clearing previous processing...")
+        # New upload or changed files -> clear previous state and process new file
+        st.info("🔄 New file detected - processing...")
         
-        # Clear previous processing state
-        keys_to_clear = ["documents", "chunks", "retriever", "qa_chain", "chat_history", "messages"]
-        for key in keys_to_clear:
+        # Clear previous state
+        for key in ["documents", "chunks", "retriever", "qa_chain", "chat_history"]:
             if key in st.session_state:
                 del st.session_state[key]
         
-        # Clear Streamlit cache
-        st.cache_data.clear()
-        st.cache_resource.clear()
-        
-        # Clear GPU cache if available
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        
-        # Re-initialize chat history
+        # Re-initialize
         st.session_state["chat_history"] = []
-        st.session_state["messages"] = []
         
-        # Now process the new file
-        with st.spinner("📄 Processing new PDF document..."):
+        # Process new file
+        with st.spinner("📄 Processing PDF..."):
             documents = process_pdf(files)
             st.session_state["documents"] = documents
 
-            with st.spinner("✂ Splitting text into chunks..."):
+            with st.spinner("✂ Splitting text..."):
                 chunks = split_text(documents)
                 st.session_state["chunks"] = chunks
 
@@ -277,13 +274,11 @@ if uploaded_file is not None:
                     retriever = create_embeddings(chunks)
                     st.session_state["retriever"] = retriever
 
-                with st.spinner("⚙ Setting up QA system..."):
+                with st.spinner("⚙ Setting up QA chain..."):
                     qa_chain = create_qa_chain(retriever)
                     st.session_state["qa_chain"] = qa_chain
-                    
-                st.success("✅ Document processed successfully! You can now ask questions.")
+
             else:
-                st.error("❌ No text chunks could be extracted from the document.")
                 st.session_state["chunks"] = []
                 st.session_state["retriever"] = None
                 st.session_state["qa_chain"] = None
@@ -297,10 +292,6 @@ if uploaded_file is not None:
         chunks = st.session_state.get("chunks", [])
         retriever = st.session_state.get("retriever")
         qa_chain = st.session_state.get("qa_chain")
-        
-        # Show status for existing file
-        if qa_chain is not None:
-            st.success("✅ Using previously processed document - ready for questions!")
              
     if mode == 'Home':
         st.image(load_image("home.webp"))
@@ -332,88 +323,59 @@ if uploaded_file is not None:
     """) 
     elif st.session_state.get("chunks"):
         # Fix the QA chain invocation and answer extraction
-if mode == 'Q&A':
-    st.header("📝Q&A") 
-    st.image(load_image("qa.jpg"))
-    question = st.text_input("Enter your question about the textbook:")
+        if mode == 'Q&A':
+            st.header("📝Q&A") 
+            st.image(load_image("qa.jpg"))
+            question = st.text_input("Enter your question about the textbook:")
     
-    if st.button("Get Answer") and question:
-        if "qa_chain" not in st.session_state or st.session_state["qa_chain"] is None:
-            st.error("⚠ Please upload a PDF file first and wait for processing to complete.")
-        else:
-            with st.spinner("🔍 Searching through the document..."):
-                try:
-                    # Get the QA chain safely
-                    qa_chain = st.session_state["qa_chain"]
+            if st.button("Get Answer") and question:
+                if "qa_chain" not in st.session_state or st.session_state["qa_chain"] is None:
+                    st.error("⚠ Please upload a PDF file first and wait for processing to complete.")
+                else:
+                    with st.spinner("🔍 Searching through the document..."):
+                        try:
+                            # Get the QA chain safely
+                            qa_chain = st.session_state["qa_chain"]
                     
-                    # Use a cleaner approach for chat history
-                    chat_history = st.session_state.get("chat_history", [])
+                            # Use a cleaner approach for chat history
+                            chat_history = st.session_state.get("chat_history", [])
                     
-                    # Invoke the chain
-                    result = qa_chain.invoke({
-                        "question": question,
-                        "chat_history": chat_history
-                    })
+                            # Invoke the chain
+                            result = qa_chain.invoke({
+                                "question": question,
+                                "chat_history": chat_history
+                            })
                     
-                    # More robust answer extraction
-                    if hasattr(result, 'get'):
-                        answer = result.get("answer", "")
-                    else:
-                        answer = str(result)
+                            # More robust answer extraction
+                            if hasattr(result, 'get'):
+                                answer = result.get("answer", "")
+                            else:
+                                answer = str(result)
                     
-                    # Fallback if answer is empty or indicates no answer
-                    if not answer or "insufficient" in answer.lower() or "don't know" in answer.lower():
-                        answer = "I couldn't find a specific answer to this question in the document. Please try rephrasing your question or ask about a different topic."
+                            # Fallback if answer is empty or indicates no answer
+                            if not answer or "insufficient" in answer.lower() or "don't know" in answer.lower():
+                                answer = "I couldn't find a specific answer to this question in the document. Please try rephrasing your question or ask about a different topic."
                     
-                    st.markdown("### 💡 Answer")
-                    st.write(answer)
+                            st.markdown("### 💡 Answer")
+                            st.write(answer)
 
-                    # 📚 Show sources if available
-                    if hasattr(result, 'get') and result.get("source_documents"):
-                        st.markdown("### 📄 Source References")
-                        for i, doc in enumerate(result["source_documents"][:3], start=1):  # Limit to top 3
-                            page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
-                            content_preview = doc.page_content[:150] + "..." if len(doc.page_content) > 150 else doc.page_content
-                            with st.expander(f"Source {i} - Page {page_num}"):
-                                st.write(content_preview)
+                            # 📚 Show sources if available
+                            if hasattr(result, 'get') and result.get("source_documents"):
+                                st.markdown("### 📄 Source References")
+                                for i, doc in enumerate(result["source_documents"][:3], start=1):  # Limit to top 3
+                                    page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
+                                    content_preview = doc.page_content[:150] + "..." if len(doc.page_content) > 150 else doc.page_content
+                                    with st.expander(f"Source {i} - Page {page_num}"):
+                                        st.write(content_preview)
                     
-                    # ✅ Update chat history properly
-                    st.session_state["chat_history"].append({
-                        "question": question, 
-                        "answer": answer
-                    })
+                            # ✅ Update chat history properly
+                            st.session_state["chat_history"].append({
+                                "question": question, 
+                                "answer": answer
+                            })
                     
-                except Exception as e:
-                    st.error(f"❌ Error getting answer: {str(e)}")
-                    st.info("Please try uploading the document again or rephrasing your question.")
-                     
+                        except Exception as e:
+                            st.error(f"❌ Error getting answer: {str(e)}")
+                            st.info("Please try uploading the document again or rephrasing your question.")
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
