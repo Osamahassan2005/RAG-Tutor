@@ -176,7 +176,7 @@ st.title("📚 Welcome to RAG Book Tutor")
 
 # PDF upload via Streamlit
 uploaded_file = st.sidebar.file_uploader("Upload PDF Textbook",type=["pdf"],accept_multiple_files=True)
-mode = st.sidebar.radio("Select Mode", ["Home","Q&A","Clear"])
+mode = st.sidebar.radio("Select Mode", ["Home","Q&A"])
 
 # Get the absolute path of the current directory (where app.py is)
 def load_image(image_name):
@@ -231,50 +231,77 @@ if "chat_history" not in st.session_state:
 
 # --- end helper ---
 
+# Remove the manual cache clearing buttons and replace with automatic handling
+
 if uploaded_file is not None:
     # normalize to a list even if a single file is provided
     files = uploaded_file if isinstance(uploaded_file, list) else [uploaded_file]
 
-    # compute signature and compare with session state to avoid reprocessing unchanged uploads
+    # compute signature and compare with session state
     current_sig = _files_signature(files)
     prev_sig = st.session_state.get("uploaded_sig")
+    
     if prev_sig != current_sig:
-        # New upload or changed files -> (re)process and store results in session_state
-        with st.spinner("*Processing PDF...*"):
+        # NEW FILE DETECTED - AUTO CLEAR PREVIOUS STATE
+        st.info("🔄 New file detected - clearing previous processing...")
+        
+        # Clear previous processing state
+        keys_to_clear = ["documents", "chunks", "retriever", "qa_chain", "chat_history", "messages"]
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+        
+        # Clear Streamlit cache
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        
+        # Clear GPU cache if available
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        
+        # Re-initialize chat history
+        st.session_state["chat_history"] = []
+        st.session_state["messages"] = []
+        
+        # Now process the new file
+        with st.spinner("📄 Processing new PDF document..."):
             documents = process_pdf(files)
             st.session_state["documents"] = documents
 
-            with st.spinner("Splitting text..."):
+            with st.spinner("✂ Splitting text into chunks..."):
                 chunks = split_text(documents)
                 st.session_state["chunks"] = chunks
 
             if chunks:
-                with st.spinner("Creating embeddings..."):
-                    #st.write('Starting to create embeddings, this may take a few minutes...')
+                with st.spinner("🔧 Creating embeddings..."):
                     retriever = create_embeddings(chunks)
                     st.session_state["retriever"] = retriever
-                    #st.write('Embeddings created successfully!')
 
-                with st.spinner("Setting up QA chain..."):
+                with st.spinner("⚙ Setting up QA system..."):
                     qa_chain = create_qa_chain(retriever)
                     st.session_state["qa_chain"] = qa_chain
-
+                    
+                st.success("✅ Document processed successfully! You can now ask questions.")
             else:
-                # save empty to avoid KeyError later
+                st.error("❌ No text chunks could be extracted from the document.")
                 st.session_state["chunks"] = []
                 st.session_state["retriever"] = None
                 st.session_state["qa_chain"] = None
 
         # update signature after successful processing
         st.session_state["uploaded_sig"] = current_sig
+        
     else:
         # same files as before — reuse cached objects
         documents = st.session_state.get("documents", [])
         chunks = st.session_state.get("chunks", [])
         retriever = st.session_state.get("retriever")
         qa_chain = st.session_state.get("qa_chain")
-
-
+        
+        # Show status for existing file
+        if qa_chain is not None:
+            st.success("✅ Using previously processed document - ready for questions!")
+             
     if mode == 'Home':
         st.image(load_image("home.webp"))
         st.markdown("""
@@ -303,51 +330,66 @@ if uploaded_file is not None:
 
     💡 *Note:* This app uses AI-powered retrieval, so answers are based on your uploaded documents.
     """) 
-    elif mode == "Clear":
-         st.header("🧹 Maintenance Tools")
-         st.write("Manage your session and cache here.")
-
-         if st.button("🧹 Clear Chat"):
-            clear_chat()
-
-         if st.button("♻️ Clear Cache"):
-            clear_cache()
-
-         if st.button("🧠 Full Reset (All Caches)"):
-            clear_all_caches()
-
-         st.info("After clearing cache, re-upload your document before asking questions again.")
     elif st.session_state.get("chunks"):
-        if mode == 'Q&A':
-           st.header("📝Q&A") 
-           st.image(load_image("qa.jpg"))
-           question = st.text_input("Enter your question about the textbook:")
-           if st.button("Get Answer") and question:
-               if qa_chain is None:
-                   st.error("QA chain is not ready. Please re-upload the PDF or wait until embeddings finish.")
-               else:
-                    with st.spinner("Retrieving answer..."):
-                         result = qa_chain.invoke({
-                         "question": question,
-                         "chat_history": st.session_state["chat_history"]
-                          })
-
-                    # Extract answer safely
-                    answer = result.get("answer", result.get("result", result.get("output_text", "No answer found")))
-
-                    st.markdown("### Answer")
+        # Fix the QA chain invocation and answer extraction
+if mode == 'Q&A':
+    st.header("📝Q&A") 
+    st.image(load_image("qa.jpg"))
+    question = st.text_input("Enter your question about the textbook:")
+    
+    if st.button("Get Answer") and question:
+        if "qa_chain" not in st.session_state or st.session_state["qa_chain"] is None:
+            st.error("⚠ Please upload a PDF file first and wait for processing to complete.")
+        else:
+            with st.spinner("🔍 Searching through the document..."):
+                try:
+                    # Get the QA chain safely
+                    qa_chain = st.session_state["qa_chain"]
+                    
+                    # Use a cleaner approach for chat history
+                    chat_history = st.session_state.get("chat_history", [])
+                    
+                    # Invoke the chain
+                    result = qa_chain.invoke({
+                        "question": question,
+                        "chat_history": chat_history
+                    })
+                    
+                    # More robust answer extraction
+                    if hasattr(result, 'get'):
+                        answer = result.get("answer", "")
+                    else:
+                        answer = str(result)
+                    
+                    # Fallback if answer is empty or indicates no answer
+                    if not answer or "insufficient" in answer.lower() or "don't know" in answer.lower():
+                        answer = "I couldn't find a specific answer to this question in the document. Please try rephrasing your question or ask about a different topic."
+                    
+                    st.markdown("### 💡 Answer")
                     st.write(answer)
 
                     # 📚 Show sources if available
-                    if result.get("source_documents"):
-                       st.markdown("### 📄 Sources")
-                       for i, doc in enumerate(result["source_documents"], start=1):
-                           page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
-                           st.markdown(f"**Source {i}:** Page {page_num}")
-                    # ✅ Update chat history
-                    st.session_state["chat_history"].append((question, answer))
+                    if hasattr(result, 'get') and result.get("source_documents"):
+                        st.markdown("### 📄 Source References")
+                        for i, doc in enumerate(result["source_documents"][:3], start=1):  # Limit to top 3
+                            page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
+                            content_preview = doc.page_content[:150] + "..." if len(doc.page_content) > 150 else doc.page_content
+                            with st.expander(f"Source {i} - Page {page_num}"):
+                                st.write(content_preview)
+                    
+                    # ✅ Update chat history properly
+                    st.session_state["chat_history"].append({
+                        "question": question, 
+                        "answer": answer
+                    })
+                    
+                except Exception as e:
+                    st.error(f"❌ Error getting answer: {str(e)}")
+                    st.info("Please try uploading the document again or rephrasing your question.")
+                     
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
 
