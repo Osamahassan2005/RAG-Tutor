@@ -324,58 +324,68 @@ if uploaded_file is not None:
     elif st.session_state.get("chunks"):
         # Fix the QA chain invocation and answer extraction
         if mode == 'Q&A':
-            st.header("📝Q&A") 
+            st.header("📝 Q&A")
             st.image(load_image("qa.jpg"))
             question = st.text_input("Enter your question about the textbook:")
-    
+            
             if st.button("Get Answer") and question:
                 if "qa_chain" not in st.session_state or st.session_state["qa_chain"] is None:
                     st.error("⚠ Please upload a PDF file first and wait for processing to complete.")
                 else:
-                    with st.spinner("🔍 Searching through the document..."):
+                    with st.spinner("🔍 Searching for answers..."):
                         try:
-                            # Get the QA chain safely
-                            qa_chain = st.session_state["qa_chain"]
+                                qa_chain = st.session_state["qa_chain"]
                     
-                            # Use a cleaner approach for chat history
-                            chat_history = st.session_state.get("chat_history", [])
-                    
-                            # Invoke the chain
-                            result = qa_chain.invoke({
-                                "question": question,
-                                "chat_history": chat_history
-                            })
-                    
-                            # More robust answer extraction
-                            if hasattr(result, 'get'):
-                                answer = result.get("answer", "")
-                            else:
-                                answer = str(result)
-                    
-                            # Fallback if answer is empty or indicates no answer
-                            if not answer or "insufficient" in answer.lower() or "don't know" in answer.lower():
-                                answer = "I couldn't find a specific answer to this question in the document. Please try rephrasing your question or ask about a different topic."
-                    
-                            st.markdown("### 💡 Answer")
-                            st.write(answer)
+                                # Convert chat history to the correct format
+                                chat_history = []
+                                if "chat_history" in st.session_state:
+                                    for entry in st.session_state["chat_history"]:
+                                        if isinstance(entry, dict):
+                                            # Convert dict format to tuple format
+                                            chat_history.append((entry["question"], entry["answer"]))
+                                        elif isinstance(entry, tuple) and len(entry) == 2:
+                                            # Already in correct format
+                                            chat_history.append(entry)
+                                
+                                # Invoke the chain with proper chat history format
+                                result = qa_chain.invoke({
+                                    "question": question,
+                                    "chat_history": chat_history
+                                })
+                                
+                                # Extract answer safely
+                                if hasattr(result, 'get'):
+                                    answer = result.get("answer", "")
+                                else:
+                                    answer = str(result)
+                                            
+                                # Handle insufficient answers
+                                if not answer or any(phrase in answer.lower() for phrase in 
+                                                   ["insufficient", "don't know", "not found", "no answer", 
+                                                    "couldn't find", "not contain"]):
+                                    answer = "I couldn't find a specific answer to this question in the document. Please try rephrasing your question or ask about a different topic."
+                                
+                                st.markdown("### 💡 Answer")
+                                st.write(answer)
 
-                            # 📚 Show sources if available
-                            if hasattr(result, 'get') and result.get("source_documents"):
-                                st.markdown("### 📄 Source References")
-                                for i, doc in enumerate(result["source_documents"][:3], start=1):  # Limit to top 3
-                                    page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
-                                    content_preview = doc.page_content[:150] + "..." if len(doc.page_content) > 150 else doc.page_content
-                                    with st.expander(f"Source {i} - Page {page_num}"):
-                                        st.write(content_preview)
+                                # 📚 Show sources if available
+                                if hasattr(result, 'get') and result.get("source_documents"):
+                                    st.markdown("### 📄 Sources")
+                                    for i, doc in enumerate(result["source_documents"][:3], start=1):
+                                        page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
+                                        with st.expander(f"Source {i} - Page {page_num}"):
+                                            st.write(doc.page_content[:500] + "..." if len(doc.page_content) > 500 else doc.page_content)
+
+                                # ✅ Update chat history in the CORRECT format
+                                # Store as tuples (question, answer) instead of dictionaries
+                                if "chat_history" not in st.session_state:
+                                    st.session_state["chat_history"] = []
                     
-                            # ✅ Update chat history properly
-                            st.session_state["chat_history"].append({
-                                "question": question, 
-                                "answer": answer
-                            })
+                                st.session_state["chat_history"].append((question, answer))
                     
                         except Exception as e:
                             st.error(f"❌ Error getting answer: {str(e)}")
-                            st.info("Please try uploading the document again or rephrasing your question.")
+                            st.info("Please try rephrasing your question or uploading the document again.")
+
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
