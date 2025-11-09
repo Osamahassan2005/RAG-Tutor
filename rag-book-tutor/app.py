@@ -238,34 +238,47 @@ def clear_chat():
     st.session_state.chat_history = []
     st.success("💬 Chat history cleared!")
     st.rerun()
-# Remove the manual cache clearing buttons and replace with automatic handling
-
+# Add this to your sidebar for debugging
+with st.sidebar.expander("🔧 System Status"):
+    st.write("*Session State:*")
+    for key in ["uploaded_sig", "documents", "chunks", "retriever", "qa_chain"]:
+        exists = key in st.session_state
+        status = "✅" if exists and st.session_state[key] is not None else "❌"
+        st.write(f"{status} {key}: {exists}")
+    
+    if st.button("🔄 Force Reset All"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.success("💥 Complete reset done!")
+        st.rerun()
+# Enhanced file processing with automatic state cleanup
 if uploaded_file is not None:
-    # normalize to a list even if a single file is provided
     files = uploaded_file if isinstance(uploaded_file, list) else [uploaded_file]
-
-    # compute signature and compare with session state to avoid reprocessing unchanged uploads
     current_sig = _files_signature(files)
     prev_sig = st.session_state.get("uploaded_sig")
     
     if prev_sig != current_sig:
-        # New upload or changed files -> clear previous state and process new file
-        st.info("🔄 New file detected - processing...")
+        # NEW FILE DETECTED - COMPLETELY RESET STATE
+        st.info("🔄 New file detected - resetting processing state...")
         
-        # Clear previous state
-        for key in ["documents", "chunks", "retriever", "qa_chain", "chat_history"]:
+        # Comprehensive state cleanup
+        processing_keys = ["uploaded_sig", "documents", "chunks", "retriever", "qa_chain"]
+        for key in processing_keys:
             if key in st.session_state:
                 del st.session_state[key]
         
-        # Re-initialize
-        st.session_state["chat_history"] = []
+        # Clear any existing cache
+        st.cache_data.clear()
+        st.cache_resource.clear()
         
-        # Process new file
-        with st.spinner("📄 Processing PDF..."):
+        # Now process the new file
+        with st.spinner("📄 Processing PDF document..."):
             documents = process_pdf(files)
             st.session_state["documents"] = documents
 
-            with st.spinner("✂ Splitting text..."):
+            with st.spinner("✂ Splitting text into chunks..."):
                 chunks = split_text(documents)
                 st.session_state["chunks"] = chunks
 
@@ -274,24 +287,20 @@ if uploaded_file is not None:
                     retriever = create_embeddings(chunks)
                     st.session_state["retriever"] = retriever
 
-                with st.spinner("⚙ Setting up QA chain..."):
+                with st.spinner("⚙ Setting up QA system..."):
                     qa_chain = create_qa_chain(retriever)
                     st.session_state["qa_chain"] = qa_chain
-
+                    
+                st.success(f"✅ Document processed successfully! Created {len(chunks)} chunks.")
+                st.session_state["uploaded_sig"] = current_sig
+                
             else:
+                st.error("❌ No text chunks could be created from the document.")
+                # Don't set uploaded_sig so it will retry next time
                 st.session_state["chunks"] = []
-                st.session_state["retriever"] = None
+                st.session_state["retriever"] = None  
                 st.session_state["qa_chain"] = None
 
-        # update signature after successful processing
-        st.session_state["uploaded_sig"] = current_sig
-        
-    else:
-        # same files as before — reuse cached objects
-        documents = st.session_state.get("documents", [])
-        chunks = st.session_state.get("chunks", [])
-        retriever = st.session_state.get("retriever")
-        qa_chain = st.session_state.get("qa_chain")
              
     if mode == 'Home':
         st.image(load_image("home.webp"))
@@ -325,67 +334,53 @@ if uploaded_file is not None:
         # Fix the QA chain invocation and answer extraction
         if mode == 'Q&A':
             st.header("📝 Q&A")
-            st.image(load_image("qa.jpg"))
+    
+            # State validation
+            if "uploaded_sig" not in st.session_state:
+                st.info("📁 Please upload a PDF document to begin")
+            elif "qa_chain" not in st.session_state or st.session_state["qa_chain"] is None:
+                st.warning("🔄 Document processing incomplete. Please wait or re-upload.")
+            else:
+                st.success("✅ Document ready for questions!")
+            
             question = st.text_input("Enter your question about the textbook:")
             
             if st.button("Get Answer") and question:
+                # Validate state before processing
                 if "qa_chain" not in st.session_state or st.session_state["qa_chain"] is None:
-                    st.error("⚠ Please upload a PDF file first and wait for processing to complete.")
+                    st.error("❌ System not ready. Please upload a document first.")
                 else:
                     with st.spinner("🔍 Searching for answers..."):
                         try:
-                                qa_chain = st.session_state["qa_chain"]
+                            qa_chain = st.session_state["qa_chain"]
+                            
+                            # Convert chat history to correct format
+                            chat_history = []
+                            if "chat_history" in st.session_state:
+                                for entry in st.session_state["chat_history"]:
+                                    if isinstance(entry, dict):
+                                        chat_history.append((entry["question"], entry["answer"]))
+                                    elif isinstance(entry, tuple) and len(entry) == 2:
+                                        chat_history.append(entry)
                     
-                                # Convert chat history to the correct format
-                                chat_history = []
-                                if "chat_history" in st.session_state:
-                                    for entry in st.session_state["chat_history"]:
-                                        if isinstance(entry, dict):
-                                            # Convert dict format to tuple format
-                                            chat_history.append((entry["question"], entry["answer"]))
-                                        elif isinstance(entry, tuple) and len(entry) == 2:
-                                            # Already in correct format
-                                            chat_history.append(entry)
-                                
-                                # Invoke the chain with proper chat history format
-                                result = qa_chain.invoke({
-                                    "question": question,
-                                    "chat_history": chat_history
-                                })
-                                
-                                # Extract answer safely
-                                if hasattr(result, 'get'):
-                                    answer = result.get("answer", "")
-                                else:
-                                    answer = str(result)
-                                            
-                                # Handle insufficient answers
-                                if not answer or any(phrase in answer.lower() for phrase in 
-                                                   ["insufficient", "don't know", "not found", "no answer", 
-                                                    "couldn't find", "not contain"]):
-                                    answer = "I couldn't find a specific answer to this question in the document. Please try rephrasing your question or ask about a different topic."
-                                
-                                st.markdown("### 💡 Answer")
-                                st.write(answer)
-
-                                # 📚 Show sources if available
-                                if hasattr(result, 'get') and result.get("source_documents"):
-                                    st.markdown("### 📄 Sources")
-                                    for i, doc in enumerate(result["source_documents"][:3], start=1):
-                                        page_num = doc.metadata.get("page", doc.metadata.get("page_number", "N/A"))
-                                        with st.expander(f"Source {i} - Page {page_num}"):
-                                            st.write(doc.page_content[:500] + "..." if len(doc.page_content) > 500 else doc.page_content)
-
-                                # ✅ Update chat history in the CORRECT format
-                                # Store as tuples (question, answer) instead of dictionaries
-                                if "chat_history" not in st.session_state:
-                                    st.session_state["chat_history"] = []
+                            result = qa_chain.invoke({
+                                "question": question,
+                                "chat_history": chat_history
+                            })
                     
-                                st.session_state["chat_history"].append((question, answer))
+                            # Extract and display answer
+                            answer = result.get("answer", "No answer found.")
+                            st.markdown("### 💡 Answer")
+                            st.write(answer)
                     
+                            # Update chat history as tuples
+                            if "chat_history" not in st.session_state:
+                                st.session_state["chat_history"] = []
+                            st.session_state["chat_history"].append((question, answer))
+                            
                         except Exception as e:
-                            st.error(f"❌ Error getting answer: {str(e)}")
-                            st.info("Please try rephrasing your question or uploading the document again.")
+                            st.error(f"❌ Error: {str(e)}")
+                            st.info("💡 Try clearing cache and re-uploading the document.")
 
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
