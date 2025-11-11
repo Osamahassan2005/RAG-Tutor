@@ -261,7 +261,7 @@ if uploaded_file is not None:
     
     if prev_sig != current_sig:
         # NEW FILE DETECTED - COMPLETELY RESET STATE
-        st.info("🔄 New file detected - resetting processing state...")
+        #st.info("🔄 New file detected - resetting processing state...")
         
         # Comprehensive state cleanup
         processing_keys = ["uploaded_sig", "documents", "chunks", "retriever", "qa_chain"]
@@ -291,7 +291,7 @@ if uploaded_file is not None:
                     qa_chain = create_qa_chain(retriever)
                     st.session_state["qa_chain"] = qa_chain
                     
-                st.success(f"✅ Document processed successfully! Created {len(chunks)} chunks.")
+                #st.success(f"✅ Document processed successfully! Created {len(chunks)} chunks.")
                 st.session_state["uploaded_sig"] = current_sig
                 
             else:
@@ -384,3 +384,4 @@ if uploaded_file is not None:
 
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
