@@ -295,7 +295,7 @@ if uploaded_file is not None:
                 st.session_state["uploaded_sig"] = current_sig
                 
             else:
-                st.error("❌ No text chunks could be created from the document.")
+                #st.error("❌ No text chunks could be created from the document.")
                 # Don't set uploaded_sig so it will retry next time
                 st.session_state["chunks"] = []
                 st.session_state["retriever"] = None  
@@ -384,4 +384,5 @@ if uploaded_file is not None:
 
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
