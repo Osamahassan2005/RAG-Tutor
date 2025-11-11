@@ -69,7 +69,7 @@ st.markdown("""
                 color: #fff; /* white */
                 background-color: #9966cc; /* darker orange */
            }
-           .stApp p  {
+           .stApp {
                 background-color: #5b21b6;
                 color: #ffffff !important; /* white */
                 }
@@ -183,34 +183,7 @@ def load_image(image_name):
      base_path = os.path.join(os.path.dirname(__file__), "assets")
      image_path = os.path.join(base_path, image_name)
      return Image.open(image_path)
-# def clear_chat():
-#     st.session_state.messages = []
-#     st.session_state.conversation = None
-#     st.session_state.chat_history = []
-#     st.success("💬 Chat history cleared!")
-#     st.rerun()
 
-# def clear_cache():
-#     st.cache_data.clear()
-#     st.cache_resource.clear()
-#     st.success("✅ Streamlit cache cleared! Please re-upload your document.")
-#     st.rerun()
-
-# def clear_all_caches():
-#     cache_paths = [
-#         os.path.expanduser("~/.cache/torch"),
-#         os.path.expanduser("~/.cache/huggingface/transformers"),
-#         os.path.expanduser("~/.streamlit/cache")
-#     ]
-#     for path in cache_paths:
-#         if os.path.exists(path):
-#             try:
-#                 shutil.rmtree(path)
-#             except Exception as e:
-#                 print(f"⚠️ Could not clear {path}: {e}")
-#     if torch.cuda.is_available():
-#         torch.cuda.empty_cache()
-#     clear_cache()
 # --- small helper: signature to detect changed uploads ---
 def _files_signature(files):
     """
@@ -230,15 +203,16 @@ if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
 
 # --- end helper ---
-# Remove all clear_cache and clear_all_caches functions
-# Keep only clear_chat for conversation history
+ 
+# clear_chat for conversation history
+
 def clear_chat():
     st.session_state.messages = []
     st.session_state.conversation = None
     st.session_state.chat_history = []
     st.success("💬 Chat history cleared!")
     st.rerun()
-# Add this to your sidebar for debugging
+# for debugging
 with st.sidebar.expander("🔧 System Status"):
     st.write("*Session State:*")
     for key in ["uploaded_sig", "documents", "chunks", "retriever", "qa_chain"]:
@@ -260,7 +234,6 @@ if uploaded_file is not None:
     prev_sig = st.session_state.get("uploaded_sig")
     
     if prev_sig != current_sig:
-        # NEW FILE DETECTED - COMPLETELY RESET STATE
         #st.info("🔄 New file detected - resetting processing state...")
         
         # Comprehensive state cleanup
@@ -384,5 +357,6 @@ if uploaded_file is not None:
 
     elif st.session_state.get("documents"):
         st.warning("No chunks were created from the document. Please check the document content.")
+
 
 
