@@ -63,13 +63,12 @@ def create_qa_chain(retriever):
     prompt = PromptTemplate(
         input_variables=["context", "question"],
         template=(
-            "You are a helpful and knowledgeable tutor who answers questions from a textbook.\n\n"
-            "Use ONLY the context to answer. If not found, say '❌ Insufficient evidence.'\n\n"
-            "Context:\n{context}\n\n"
-            "Question: {question}\n\n"
-            "Detailed Answer:"
-        )
-    )
+    "You are a textbook tutor. Use ONLY this context:\n\n{context}\n\n"
+    "Question: {question}\n\n"
+    "Answer directly from the context. If evidence is insufficient, state: 'The textbook doesn't provide enough information on this topic.' "
+    "Otherwise, provide a clear, detailed answer with key concepts and examples from the text."
+          )
+    
     # ⚙ Load lightweight model (no Hugging Face key)
     pipe = get_pipe() 
     llm = HuggingFacePipeline(pipeline=pipe)
@@ -82,6 +81,7 @@ def create_qa_chain(retriever):
     )
 
     return qa_chain
+
 
 
 
